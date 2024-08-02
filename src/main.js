@@ -4,7 +4,6 @@ import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-// console.log('hello main');
 
 const refs = {
   btnSearch: document.querySelector('.btn-search'),
@@ -18,28 +17,33 @@ refs.form.addEventListener('submit', e => {
   refs.ul.innerHTML = '';
 
   if (refs.input.value.trim()) {
-    const result = getImages(refs.input.value);
-    result
+    getImages(refs.input.value)
       .then(response => {
-        if (response.total !== 0) {
+        if (response && response.total !== 0) {
           renderImg(response.hits);
-          let gallery = new SimpleLightbox('.gallery a');
-          gallery.refresh();
         } else {
           iziToast.error({
-            message:
-              'SSorry, there are no images matching your search query. Please try again!',
+            title: 'Error',
+            message: 'Sorry, there are no images matching your search query. Please try again!',
             position: 'topRight',
           });
         }
       })
-      .catch(error => console.log(error))
+      .catch(error => {
+        console.log('An error occurred:', error);
+        iziToast.error({
+          title: 'Error',
+          message: 'An error occurred while fetching images. Please check your internet connection and try again.',
+          position: 'topRight',
+        });
+      })
       .finally(() => {
         refs.input.value = '';
       });
   } else {
     iziToast.error({
-      message: 'Enter value',
+      title: 'Error',
+      message: 'Please enter a search term.',
       position: 'topRight',
     });
   }

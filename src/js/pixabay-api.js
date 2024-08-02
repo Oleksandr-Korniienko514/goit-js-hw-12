@@ -1,10 +1,12 @@
 import 'izitoast/dist/css/iziToast.min.css';
+import iziToast from 'izitoast';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-
 
 export function getImages(img) {
   const form = document.querySelector('.form');
-  form.insertAdjacentHTML('afterend', '<div class="loader"></div>');
+  const loader = document.createElement('div');
+  loader.className = 'loader';
+  form.insertAdjacentElement('afterend', loader);
 
   const BASE_URL = 'https://pixabay.com/api/';
   const params = new URLSearchParams({
@@ -21,18 +23,20 @@ export function getImages(img) {
   return fetch(url)
     .then(response => {
       if (!response.ok) {
-        throw new Error(response.status);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     })
-    .then(data => {
-      return data;
-    })
     .catch(error => {
       console.error('Error fetching images:', error);
+      iziToast.error({
+        title: 'Error',
+        message: 'An error occurred while fetching images. Please try again later.',
+        position: 'topRight',
+      });
+      throw error;
     })
     .finally(() => {
-      const loader = document.querySelector('.loader');
       if (loader) {
         loader.remove();
       }
