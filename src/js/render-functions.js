@@ -26,13 +26,12 @@ function imgTemplate({
   </li>`;
 }
 
+
 function imgsTemplate(arr) {
   return arr.map(imgTemplate).join('');
 }
 
 export function renderImg(hits) {
   const markup = imgsTemplate(hits);
-  gallery.innerHTML = markup;
-  const lightbox = new SimpleLightbox('.gallery a');
-  lightbox.refresh();
+  gallery.innerHTML += markup;
 }
