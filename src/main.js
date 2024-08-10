@@ -16,23 +16,31 @@ const refs = {
 let page = 1;
 let query = '';
 let gallery = new SimpleLightbox('.gallery a');
-refs.loadBtn.classList.add('hiddenBtn');
-refs.form.addEventListener('submit', async e => {
-  try {
-    refs.loadBtn.classList.remove('hiddenBtn');
-    e.preventDefault();
-    query = refs.input.value.trim();
-    if (query === '') {
-      iziToast.error({
-        title: 'Error',
-        message: 'Please enter a search query',
-      });
-      return;
-    }
+let totalHits = 0; 
+let loadedImages = 0; 
 
-    refs.ul.innerHTML = '';
-    page = 1;
-    startLoader();
+refs.loadBtn.classList.add('hiddenBtn');
+
+refs.form.addEventListener('submit', async e => {
+  e.preventDefault();
+  query = refs.input.value.trim();
+
+  if (query === '') {
+    iziToast.error({
+      title: 'Error',
+      message: 'Please enter a search query',
+    });
+    refs.loadBtn.classList.add('hiddenBtn');
+    return;
+  }
+
+  refs.ul.innerHTML = '';
+  page = 1;
+  totalHits = 0;
+  loadedImages = 0;
+  startLoader();
+
+  try {
     const result = await getImages(query, page);
     stopLoader();
 
@@ -43,9 +51,12 @@ refs.form.addEventListener('submit', async e => {
       });
       refs.loadBtn.classList.add('hiddenBtn');
     } else {
+      totalHits = result.totalHits; 
+      loadedImages += result.hits.length; 
       renderImg(result.hits);
       gallery.refresh();
-      if (result.hits.length < 15) {
+
+      if (loadedImages >= totalHits) {
         refs.loadBtn.classList.add('hiddenBtn');
       } else {
         refs.loadBtn.classList.remove('hiddenBtn');
@@ -57,34 +68,48 @@ refs.form.addEventListener('submit', async e => {
       title: 'Error',
       message: 'Something went wrong.',
     });
+    refs.loadBtn.classList.add('hiddenBtn');
   }
 });
 
 refs.loadBtn.addEventListener('click', async () => {
   page += 1;
-   console.log('Page incremented:', page);
+  console.log('Page incremented:', page);
   startLoader();
-  const result = await getImages(query, page);
-  stopLoader();
 
-  if (result.hits.length === 0) {
-    refs.loadBtn.classList.add('hiddenBtn');
-    iziToast.info({
-      title: 'No more results',
-      message: "We're sorry, but you've reached the end of search results.",
-    });
-  } else {
-    renderImg(result.hits);
-    gallery.refresh();
-    if (result.hits.length < 15) {
-      refs.loadBtn.classList.add('hiddenBtn');
+  try {
+    const result = await getImages(query, page);
+    stopLoader();
+
+    if (result.hits.length === 0) {
       iziToast.info({
         title: 'No more results',
         message: "We're sorry, but you've reached the end of search results.",
       });
+      refs.loadBtn.classList.add('hiddenBtn');
+    } else {
+      loadedImages += result.hits.length;
+      renderImg(result.hits);
+      gallery.refresh();
+
+      if (loadedImages >= totalHits) {
+        refs.loadBtn.classList.add('hiddenBtn');
+        iziToast.info({
+          title: 'No more results',
+          message: "We're sorry, but you've reached the end of search results.",
+        });
+      }
     }
+
+    scrollToEnd();
+  } catch (error) {
+    stopLoader();
+    iziToast.error({
+      title: 'Error',
+      message: 'Something went wrong.',
+    });
+    refs.loadBtn.classList.add('hiddenBtn');
   }
-  scrollToEnd();
 });
 
 function scrollToEnd() {
@@ -95,13 +120,19 @@ function scrollToEnd() {
 }
 
 function startLoader() {
+  refs.loadBtn.classList.add('hiddenBtn');
   refs.loadBtn.insertAdjacentHTML(
     'afterend',
     '<div id="loader" class="loader"></div>'
   );
 }
+
 function stopLoader() {
-  document.querySelector('.loader').remove();
+  const loader = document.querySelector('.loader');
+  if (loader) loader.remove();
+
+ 
+  if (loadedImages < totalHits) {
+    refs.loadBtn.classList.remove('hiddenBtn');
+  }
 }
-
-
